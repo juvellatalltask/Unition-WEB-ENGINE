@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+body
+{
+  margin:0px;
+  color:white;
+  background:black;
+  overflow:hidden;
+  font-family:monospace;
+}
+div
+{
+  margin:0px;
+  position:absolute;
+  top:0px;
+  left:0px;
+  outline:1px solid white;
+  background:#000;
+  overflow:auto;
+}
+#CONTAINER2
+{
+  height:97%;
+  width:100%;
+  top:3%;
+}
+#CONTAINER
+{
+  width:100%;
+  height:100%;
+}
+#EWIN
+{
+  background:#f0f;
+  width:50%;
+  height:50%;
+  outline:1px solid white;
+}
+#INSPECTOR
+{
+  width:50%;
+  height:100%;
+  left:50%;
+}
+#APPEND
+{
+  width:50%;
+  height:50%;
+  top:50%;
+}
+#BAR
+{
+  width:100%;
+  height:3%;
+}
+.TITLE
+{
+    width:100%;
+    text-align:center;
+    font-size:150%;
+    position:initial;
+}
+.SUB {
+    width: 100%;
+    height:max-content;
+    position:initial;
+}
+.BARBTN {
+    font-size: 150%;
+    float: right;
+    width: fit-content;
+    position: relative;
+    height: 100%;
+    text-align: center;
+}
+p,h1
+{
+  margin-top:1%;
+  margin-left:1%;
+  outline:1px solid white;
+}
+    </style>
+    <script>
+var INSPECT,APPEND
+window.onload = () => {
+    [INSPECT,APPEND] = document.getElementsByClassName('SUB')
+    INSPECT.innerHTML=test_scene.get_html()
+}
+//classes
+class Scene
+{
+  constructor()
+  {
+    this.content=[]
+    this.attributes={
+      'name':'Scene',
+      'id':Math.floor(Math.random()*10000000000),
+      'desc':'Contains game elements.',
+      'background':new Color('#000000'),
+    }
+  }
+  get_html()
+  {
+    let attr=this.attributes
+    inspected_scene=this
+    let html=`name: ${attr['name']} <br>
+              id: ${attr['id']}<br>
+              desc: ${attr['desc']}<br>
+              background: ${attr['background'].value}
+<input type=color value="${attr['background'].value}" onchange="inspected_scene.attributes['background'].value=this.value;INSPECT.innerHTML=inspected_scene.get_html()">`
+    return html
+  }
+}
+class Color
+{
+  constructor(c)
+  {
+    this.value=c
+  }
+}
+test_scene=new Scene()
+//globals
+var _SCENES={test_scene}
+var inspected_scene=test_scene
+//functions
+function getScene(id){
+  for(let i=0;i<_SCENES.length;i++){
+    if(_SCENES[i].attributes['id']==id)
+      return _SCENES[i]
+  }
+}
+    </script>
+  </head>
+  <body>
+    <div id=CONTAINER>
+      <div id=BAR>
+        <div class=BARBTN onclick="Export()">EXPORT</div>
+        <div class=BARBTN onclick="Import()">IMPORT</div>
+      </div>
+      <div id=CONTAINER2>
+        <div id=EWIN>
+          <canvas id=CANVAS></canvas>
+        </div>
+        <div id=INSPECTOR>
+            <div class=TITLE>INSPECT</div>
+            <div class=SUB>Click to inspect.</div>
+        </div>
+        <div id=APPEND>
+            <div class=TITLE>APPEND</div>
+            <div class=SUB>Click "+" to create an element.</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
