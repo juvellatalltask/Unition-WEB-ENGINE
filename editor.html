@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+body
+{
+  user-select:none;
+  margin:0px;
+  color:white;
+  background:black;
+  overflow:hidden;
+  font-family:monospace;
+}
+div
+{
+  margin:0px;
+  position:absolute;
+  top:0px;
+  left:0px;
+  outline:1px solid white;
+  background:black;
+  overflow:auto;
+}
+.loh:hover
+{
+  background:#111;
+}
+#CONTAINER2
+{
+  height:97%;
+  width:100%;
+  top:3%;
+}
+#CONTAINER
+{
+  width:100%;
+  height:100%;
+}
+canvas
+{
+  position:absolute;
+  width:100%;
+  height:100%;
+  background-image: linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+}
+#EWIN
+{
+  width:50%;
+  height:50%;
+  outline:1px solid white;
+  overflow:hidden;
+}
+#INSPECTOR
+{
+  width:50%;
+  height:100%;
+  left:50%;
+}
+#APPEND
+{
+  width:50%;
+  height:40%;
+  top:50%;
+}
+#DESC
+{
+  width:50%;
+  height:10%;
+  top:90%;
+}
+#BAR
+{
+  width:100%;
+  height:3%;
+}
+.TITLE
+{
+    width:100%;
+    text-align:center;
+    font-size:150%;
+    position:initial;
+}
+.SUB {
+    width: 100%;
+    height:max-content;
+    position:initial;
+}
+.BARBTN {
+    font-size: 150%;
+    float: right;
+    width: 50%;
+    position: relative;
+    height: 100%;
+    text-align: center;
+    overflow:hidden;
+}
+input,button {
+  background:#000;
+  color:#fff;
+  border:1px solid #333;
+}
+p,h1
+{
+  margin-top:1%;
+  margin-left:1%;
+  outline:1px solid white;
+}
+    </style>
+    <script>
+//onload events
+var INSPECT,APPEND,DESC,ctx,canvas
+window.onload = () => {
+    [INSPECT, APPEND] = [document.getElementById('INSPECTORSUB'), document.getElementById('APPENDSUB')]
+    updateInspector()
+    DESC=document.getElementById('DESC')
+    canvas=document.getElementById('CANVAS')
+    canvas.width=canvas.offsetWidth
+    canvas.height=canvas.offsetHeight
+    ctx=canvas.getContext('2d')
+    ctx.fillRect(0,0,100,100)
+    Tree()
+    setInterval(Render)
+}
+//classes
+class Root
+{
+  constructor()
+  {
+    this.type='root'
+    this.content=[]
+    this.attributes={
+      'name':'Root',
+      'id':Math.floor(Math.random()*10000000000),
+      'desc':'Contains game elements.',
+      'background':new Color('#000000'),
+      'x':0,'y':0,
+    }
+  }
+  get_html()
+  {
+    let attr=this.attributes
+    _INSPECTED=this
+    let html=`name:
+<input type=text value="${attr['name']}" onchange="_INSPECTED.attributes['name']=this.value;Tree()" class="loh"><br>
+              id: ${attr['id']}<br>
+              desc:
+<input type=text value="${attr['desc']}" onchange="_INSPECTED.attributes['desc']=this.value;Tree()" class="loh"><br>
+x:
+<input type=number value="${attr['x']}" onchange="_INSPECTED.attributes['x']=this.value;Tree()" class="loh"><br>
+y:
+<input type=number value="${attr['y']}" onchange="_INSPECTED.attributes['y']=this.value;Tree()" class="loh"><br>
+              background: ${attr['background'].value}
+<input type=color value="${attr['background'].value}" onchange="_INSPECTED.attributes['background'].value=this.value;INSPECT.innerHTML=_INSPECTED.get_html();Tree()" class="loh">`
+    return html
+  }
+}
+class Color
+{
+  constructor(c='#ff0000')
+  {
+    this.type='color'
+    this.content=[]
+    this.value=c
+    this.attributes={
+      'name':'Color',
+      'id':Math.floor(Math.random()*10000000000),
+      'desc':'Make your game colorful!',
+      'x':0,
+      'y':0,
+    }
+  }
+  get_html()
+  {
+    let html=`
+name:
+<input type=text value="${this.attributes['name']}" onchange="_INSPECTED.attributes['name']=this.value;Tree()" class="loh"><br>
+id: ${this.attributes['id']}<br>
+desc:
+<input type=text value="${this.attributes['desc']}" onchange="_INSPECTED.attributes['desc']=this.value;Tree()" class="loh"><br>
+color:${this.value}
+<input type=color value="${this.value}" onchange="_INSPECTED.value=this.value;INSPECT.innerHTML=_INSPECTED.get_html();Tree()" class="loh">`
+    return html
+  }
+}
+class Code
+{
+  constructor(c='#ff0000')
+  {
+    this.type='code'
+    this.content=[]
+    this.value=c
+    this.attributes={'name':'Code',
+      'id':Math.floor(Math.random()*10000000000),
+      'code':'#CODE WILL GO HERE#',
+      'desc':'Controls the behaviors of objects.'
+    }
+  }
+  get_html()
+  {
+    let html=`
+    name:
+<input type=text value="${this.attributes['name']}" onchange="_INSPECTED.attributes['name']=this.value;Tree()" class="loh"><br>
+id: ${this.attributes['id']}<br>
+              desc:
+<input type=text value="${this.attributes['desc']}" onchange="_INSPECTED.attributes['desc']=this.value;Tree()" class="loh"><br>
+    code:${this.attributes['code']}<br>`
+    return html
+  }
+}
+class Rectangle
+{
+  constructor()
+  {
+    this.type='rectangle'
+    this.content=[]
+    this.attributes={
+      'name':'Rectangle',
+      'id':Math.floor(Math.random()*10000000000),
+      'desc':'2D rectangle element used mainly for collision.',
+      'background':new Color(),
+      'x':0,
+      'y':0,
+      'width':10,
+      'height':10
+    }
+  }
+  get_html()
+  {
+    let attr=this.attributes
+    _INSPECTED=this
+    let html=`name:
+<input type=text value="${attr['name']}" onchange="_INSPECTED.attributes['name']=this.value;Tree()" class="loh"><br>
+id: ${attr['id']}<br>
+desc:
+<input type=text value="${attr['desc']}" onchange="_INSPECTED.attributes['desc']=this.value;Tree()" class="loh"><br>
+x:
+<input type=number value="${attr['x']}" onchange="_INSPECTED.attributes['x']=this.value;Tree()" class="loh"><br>
+y:
+<input type=number value="${attr['y']}" onchange="_INSPECTED.attributes['y']=this.value;Tree()" class="loh"><br>
+width:
+<input type=number value="${attr['width']}" onchange="_INSPECTED.attributes['width']=this.value;Tree()" class="loh"><br>
+height:
+<input type=number value="${attr['height']}" onchange="_INSPECTED.attributes['height']=this.value;Tree()" class="loh"><br>
+background: ${attr['background'].value}
+<input type=color value="${attr['background'].value}" onchange="_INSPECTED.attributes['background'].value=this.value;INSPECT.innerHTML=_INSPECTED.get_html();Tree()" class="loh">
+`
+    return html
+  }
+}
+class Vector
+{
+  constructor()
+  {
+    this.type='vector'
+    this.attributes={
+      'name':'Vector',
+      'id':Math.floor(Math.random()*10000000000),
+      'desc':'Point in 2D space.',
+      'x':0,
+      'y':0,
+    }
+  }
+  get_html()
+  {
+    let attr=this.attributes
+    _INSPECTED=this
+    let html=`name:
+<input type=text value="${attr['name']}" onchange="_INSPECTED.attributes['name']=this.value;Tree()" class="loh"><br>
+id: ${attr['id']}<br>
+desc:
+<input type=text value="${attr['desc']}" onchange="_INSPECTED.attributes['desc']=this.value;Tree()" class="loh"><br>
+x:
+<input type=number value="${attr['x']}" onchange="_INSPECTED.attributes['x']=this.value;Tree()" class="loh"><br>
+y:
+<input type=number value="${attr['y']}" onchange="_INSPECTED.attributes['y']=this.value;Tree()" class="loh"><br>`
+  return html
+  }
+}
+class Sprite
+{
+  constructor()
+  {
+    this.type='sprite'
+    this.content=[]
+    this.attributes={
+      'name':'Sprite',
+      'id':Math.floor(Math.random()*10000000000),
+      'desc':'2D sprite element.',
+      'image':undefined,
+      'x':0,
+      'y':0,
+      'width':10,
+      'height':10,
+    }
+  }
+  get_html()
+  {
+    let attr=this.attributes
+    _INSPECTED=this
+    let html=`name:
+<input type=text value="${attr['name']}" onchange="_INSPECTED.attributes['name']=this.value;Tree()" class="loh"><br>
+id: ${attr['id']}<br>
+desc:
+<input type=text value="${attr['desc']}" onchange="_INSPECTED.attributes['desc']=this.value;Tree()" class="loh"><br>
+x:
+<input type=number value="${attr['x']}" onchange="_INSPECTED.attributes['x']=this.value;Tree()" class="loh"><br>
+y:
+<input type=number value="${attr['y']}" onchange="_INSPECTED.attributes['y']=this.value;Tree()" class="loh"><br>
+width:
+<input type=number value="${attr['width']}" onchange="_INSPECTED.attributes['width']=this.value;Tree()" class="loh"><br>
+height:
+<input type=number value="${attr['height']}" onchange="_INSPECTED.attributes['height']=this.value;Tree()" class="loh"><br>
+image:
+<input type="file"  accept="image/*" name="image" id="file"  onchange="loadFile(event);Tree()" class="loh" style="display: none;">
+<label for="file" style="cursor: pointer;">Upload Image</label>
+<img id="output" width="100%" />
+`
+    return html
+  }
+}
+var a=new Root()
+var b=new Sprite()
+var c=new Code()
+var d=new Root()
+var e=new Rectangle()
+var f=new Root()
+var g=new Color()
+//globals
+var _ROOT=a
+a.content.push(b,c,d,f)
+d.content.push(e)
+f.content.push(g)
+var _INSPECTED=e
+//functions
+function Tree()
+{
+  let str='Click "APPEND" to add an object to the scene.<br>'
+  let a=(x=_ROOT,y=0)=>{
+    let c=''
+    for(let j=0;j<y;j++)
+    {
+      c+='&nbsp;&nbsp;&nbsp;'
+    }
+    c+="➤ "
+    str+=`<a onmouseover="Desc('${x.attributes['desc']}')" class='loh' onclick="_INSPECTED=getFromTree(${x.attributes['id']});updateInspector()">`+(c+x.attributes['name']+' #'+x.attributes['id'])+'</a><br>'
+    for(let i=0;i<x.content.length;i++)
+    {
+      let b=x.content[i]
+      a(b,y+1)
+    }
+  }
+  a()
+  APPEND.innerHTML=str
+}
+function getFromTree(x)
+{
+  let zz=undefined
+  if(x==_ROOT.attributes['id'])zz=_ROOT
+  else
+  {
+    let b=(z=_ROOT)=>{
+      for(let i=0;i<z.content.length;i++)
+      {
+        a=z.content[i]
+        if(a.attributes['id']==x)
+        {
+          zz=a
+          break
+        }
+        else b(a)
+      }
+    }
+    b()
+  }
+  return zz
+}
+function Render(x)
+{
+  ctx.fillStyle=_ROOT.attributes['background'].value
+  //ctx.clearRect(0,0,canvas.width,canvas.height)
+  //ctx.fillStyle='#0000000f'
+  ctx.fillRect(0,0,canvas.width,canvas.height)
+  let Z = canvas.height/100
+  let CX = canvas.width/2
+  let CY = canvas.height/2
+  let a=(x,pos_x,pos_y)=>{
+    x.attributes['x']=parseInt(x.attributes['x'])
+    x.attributes['y']=parseInt(x.attributes['y'])
+    pos_x=parseInt(pos_x)
+    pos_y=parseInt(pos_y)
+    if(x.type=='rectangle')
+    {
+      ctx.fillStyle=x.attributes['background'].value
+      let W = x.attributes["width"]*Z
+      let H = x.attributes['height']*Z
+      let X = (pos_x+x.attributes["x"])*Z+CX-W/2
+      let Y = -(pos_y+x.attributes["y"])*Z+CY-H/2
+      console.log(x.attributes['x'],pos_x,x.attributes['x']+pos_x)
+      ctx.fillRect(X,Y,W,H)
+    }
+    for(let i=0;i<x.content.length;i++)
+    {
+      let y=x.content[i]
+      a(y,pos_x+x.attributes["x"],pos_y+x.attributes["y"])
+    }
+  }
+  a(_ROOT,0,0)
+}
+function Desc(x)
+{
+  DESC.innerHTML=`${x}`
+}
+
+//my plagiarized code...
+window.addEventListener("beforeunload", function (e) {
+    var confirmationMessage = 'It looks like you have been editing something. '
+        + 'If you leave before saving, your changes will be lost.';
+
+    (e || window.event).returnValue = confirmationMessage; //Gecko + IE
+    return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
+});
+function loadFile(event) {
+	var image = document.getElementById('output');
+	image.src = URL.createObjectURL(event.target.files[0]);
+	_INSPECTED.attributes['image']=image.src
+	//updateInspector()
+}
+//no more plagiarism
+function updateInspector()
+{
+  INSPECT.innerHTML=_INSPECTED.get_html()
+}
+    </script>
+    <title>Unition Web</title>
+  </head>
+  <body>
+    <div id=CONTAINER>
+      <div id=BAR>
+        <div class=BARBTN onclick="Export()">EXPORT</div>
+        <div class=BARBTN onclick="Import()">IMPORT</div>
+      </div>
+      <div id=CONTAINER2>
+        <div id=EWIN>
+          <canvas id=CANVAS></canvas>
+        </div>
+        <div id=INSPECTOR>
+            <div class="TITLE">INSPECT</div>
+            <div class="SUB" id="INSPECTORSUB">Click to inspect.</div>
+        </div>
+        <div id=APPEND>
+            <div class="TITLE">APPEND</div>
+            <div class="SUB" id="APPENDSUB">Loading...</div>
+        </div>
+        <div id=DESC></div>
+      </div>
+    </div>
+  </body>
+</html>
